@@ -1,6 +1,8 @@
 function Tunnel(position, side, length, shift, gl) {
 	this.position = position;
 	this.length = length;
+	this.side = side;
+	this.shift = shift;
 
 	const positions = [];
 
@@ -25,7 +27,7 @@ function Tunnel(position, side, length, shift, gl) {
 		positions[idx++] = -length;
 	}
 
-  	const faceColors = [
+  	faceColors = [
 	    [1.0,  1.0,  1.0,  1.0],    // Front face: white
 	    [1.0,  0.0,  0.0,  1.0],    // Back face: red
 	    [0.0,  1.0,  0.0,  1.0],    // Top face: green
@@ -36,6 +38,8 @@ function Tunnel(position, side, length, shift, gl) {
 	    [0.0,  1.0,  0.0,  1.0],    // Top face: green
   	];
 
+  	faceColors = shuffle(faceColors);
+
   	indices = [];
 
   	for(let i=0;i<8;i++) {
@@ -43,33 +47,7 @@ function Tunnel(position, side, length, shift, gl) {
   		indices = indices.concat(idx);
   	}
 
-	const positionBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-  	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
-
-
-  	// Convert the array of colors into a table for all the vertices.
-  	var colors = [];
-  	for (let j = 0; j < faceColors.length; ++j) {
-    	const c = faceColors[j];
-
-    	// Repeat each color four times for the four vertices of the face
-		colors = colors.concat(c, c, c, c);
-	}
-	const colorBuffer = gl.createBuffer();
-	gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-	gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
-
-
-	const indexBuffer = gl.createBuffer();
-  	gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-	gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(indices), gl.STATIC_DRAW);
-
-	this.buffers = {
-	    position: positionBuffer,
-    	color: colorBuffer,
-    	indices: indexBuffer,
-	};
+  	this.buffers = generate_buffers(gl,positions, faceColors, indices);
 }
 
 Tunnel.prototype.draw = function(gl, programInfo, projectionMatrix, viewMatrix) {
@@ -78,12 +56,11 @@ Tunnel.prototype.draw = function(gl, programInfo, projectionMatrix, viewMatrix) 
 	mat4.translate(modelViewMatrix,
 	                modelViewMatrix,
 	                this.position);
+    mat4.multiply(modelViewMatrix,viewMatrix,modelViewMatrix);
 	// mat4.rotate(modelViewMatrix,  // destination matrix
  //              modelViewMatrix,  // matrix to rotate
  //              this.rotation*Math.PI/180,     // amount to rotate in radians
  //              [0, 0, 1]);       // axis to rotate around (Z)
-
-    mat4.multiply(modelViewMatrix,viewMatrix,modelViewMatrix);
 
 	// mat4.rotate(modelViewMatrix,  // destination matrix
  //              modelViewMatrix,  // matrix to rotate
