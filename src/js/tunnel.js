@@ -53,20 +53,9 @@ function Tunnel(position, side, length, shift, gl) {
 Tunnel.prototype.draw = function(gl, programInfo, projectionMatrix, viewMatrix) {
   	const modelViewMatrix = mat4.create();
 
-	mat4.translate(modelViewMatrix,
-	                modelViewMatrix,
-	                this.position);
+	mat4.translate(modelViewMatrix,modelViewMatrix,this.position);
     mat4.multiply(modelViewMatrix,viewMatrix,modelViewMatrix);
-	// mat4.rotate(modelViewMatrix,  // destination matrix
- //              modelViewMatrix,  // matrix to rotate
- //              this.rotation*Math.PI/180,     // amount to rotate in radians
- //              [0, 0, 1]);       // axis to rotate around (Z)
-
-	// mat4.rotate(modelViewMatrix,  // destination matrix
- //              modelViewMatrix,  // matrix to rotate
- //              45.0,// amount to rotate in radians
- //              [0, 1, 0]);       // axis to rotate around (X)
-
+	// mat4.rotate(modelViewMatrix,modelViewMatrix,this.rotation*Math.PI/180,[0, 0, 1]);
 
 	setAttribute(gl,this.buffers,programInfo,projectionMatrix,modelViewMatrix);
 

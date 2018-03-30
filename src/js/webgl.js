@@ -1,17 +1,22 @@
 
 // Player Attributes.
 var gravity = 0.0;
-var speed = 0.0;
+var speed = 10;
 var speed_direction = 0.0;
 var ply_pos = [0,0,0];
 
 // Objects in the Game
+
+// Tunnel Characterstics
 var tunnels = new Array();
 var path = new Array();
 var sft = 0.0;
 var look_angle = 0.0;
 var path_cnt = 20;
 var path_flag = 0;
+
+// Obstacles
+var obstacles = new Array();
 
 // Keys
 var key_left = false;
@@ -98,6 +103,7 @@ function main() {
 
     tick_elements(gl);
     tick_inputs();
+    detect_collisions(deltaTime);
 
     drawScene(gl, programInfo, deltaTime);
     requestAnimationFrame(render);
@@ -105,9 +111,24 @@ function main() {
   requestAnimationFrame(render);
 }
 
+
+function detect_collisions(deltaTime) {
+  for(let i=0;i<obstacles.length;i++) {
+    if(obstacles[i].detect_collision(ply_pos[2],gravity,speed*deltaTime)) {
+      ply_pos[2] += 3;
+      speed = 0;
+    }
+  }
+}
+
 function tick_elements(gl) {
   extend_tunnel(gl);
   tick_player();
+  remove_obstacles();
+
+  for(let i=0;i<obstacles.length;i++) {
+    obstacles[i].tick();
+  }
 }
 
 function tick_player() {
@@ -119,6 +140,14 @@ function tick_player() {
       ply_pos[1] = tunnels[i].position[1];
 
       break;
+    }
+  }
+}
+
+function remove_obstacles() {
+  for(let i=0;i<obstacles.length;i++) {
+    if(obstacles[i].position[2] - 4*obstacles[i].length > ply_pos[2]) {
+      obstacles.shift();
     }
   }
 }
@@ -143,6 +172,13 @@ function extend_tunnel(gl) {
       }
       tunnels.push( new Tunnel([lastCord[0] + tunnels[tunnels.length-1].shift,lastCord[1],lastCord[2] - len], 
         size, len, sft, gl));
+
+      if(Math.floor(Math.random() * 60)%60 == 0) {
+        console.log(obstacles.length);
+        console.log(obstacles);
+        obstacles.push( new Obstacle([lastCord[0] + tunnels[tunnels.length-1].shift,lastCord[1],lastCord[2] - len],
+            size/3,2*size,Math.floor(Math.random() * 360),1,gl));
+      }
     }
   }
 }
@@ -169,7 +205,7 @@ function generate_tunnel(gl) {
       sft += 0.001*path_flag;
     }
     if(Math.abs(sft) > 0.2) {
-      path_flag = -path_flag*1.5;
+      path_flag = -path_flag;
     }
 
     cord.push([xpos,0,zpos]);
@@ -215,10 +251,16 @@ function drawScene(gl, programInfo, deltaTime) {
   const up = [-Math.sin(gravity*Math.PI/180),Math.cos(gravity*Math.PI/180),0];
   mat4.lookAt(viewMatrix, eye, look, up);
 
-  for(i=0;i<tunnels.length;i++) {
+  for(let i=0;i<tunnels.length;i++) {
     tunnels[i].draw(gl, programInfo,projectionMatrix, viewMatrix);
   }
-  ply_pos[2] -= deltaTime*10;
+
+  for(let i=0;i<obstacles.length;i++) {
+    obstacles[i].draw(gl, programInfo,projectionMatrix, viewMatrix);
+  }
+
+  // Moving the player forward
+  ply_pos[2] -= deltaTime*speed;
 }
 
 function setAttribute(gl, buffers, programInfo, projectionMatrix, modelViewMatrix) {
@@ -312,8 +354,8 @@ function generate_buffers(gl, positions, colors, indices) {
 function tick_inputs() {
   if (pressedKeys[37]) gravity -= 5;
   if (pressedKeys[39]) gravity += 5;
-  if (pressedKeys[38]) ply_pos[2] = -0.25;
-  if (pressedKeys[40]) ply_pos[2] = 0.25;
+  // if (pressedKeys[38]) ply_pos[2] -= 0.25;
+  // if (pressedKeys[40]) ply_pos[2] += 0.25;
 }
 
 window.onkeyup = function(e) { pressedKeys[e.keyCode] = false; }
