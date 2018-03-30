@@ -1,7 +1,7 @@
 
 // Player Attributes.
 var gravity = 0.0;
-var speed = 5;
+var speed = 20;
 var speed_direction = 0.0;
 var ply_pos = [0,0,0];
 
@@ -12,7 +12,8 @@ var tunnels = new Array();
 var path = new Array();
 var sft = 0.0;
 var look_angle = 0.0;
-var path_cnt = 20;
+var PATH_CNT = 30;
+var path_cnt = PATH_CNT;
 var path_flag = 0;
 
 // Obstacles
@@ -125,18 +126,20 @@ function extend_tunnel(gl) {
       var size = tunnels[tunnels.length-1].side;
       if(path_cnt <= 0 ) {
         path_flag = (-1 + Math.floor(Math.random() * 100)%3);
-        path_cnt = 20;
+        path_cnt = PATH_CNT;
       }
-      else sft += 0.001*path_flag;
-      if(Math.abs(sft) > 0.4) path_flag = -path_flag;
+      else sft += 0.003*path_flag;
+      if(Math.abs(sft) > 0.2) path_flag = -path_flag;
 
+      type = 'white';
+      if(Math.floor(Math.random() * 4)%4 == 0) type = 'brick';
       // Extending tunnel
       tunnels.push( new Tunnel([lastCord[0] + tunnels[tunnels.length-1].shift,lastCord[1],lastCord[2] - len], 
-        size, len, sft, 'white', gl));
+        size, len, sft, type, gl));
 
       // Generating Obstacles randomly
-      if(Math.floor(Math.random() * 60)%60 == 0) {
-        obstacles.push( new Obstacle([lastCord[0] + tunnels[tunnels.length-1].shift,lastCord[1],lastCord[2] - len],
+      if(Math.floor(Math.random() * 30)%30 == 0) {
+        obstacles.push( new Obstacle([lastCord[0] + tunnels[tunnels.length-2].shift,lastCord[1],lastCord[2] - len],
             size/3,2*size,Math.floor(Math.random() * 360),1,'fire',gl));
       }
     }
@@ -144,7 +147,7 @@ function extend_tunnel(gl) {
 }
 
 function generate_tunnel(gl) {
-  LIMIT = 25;
+  LIMIT = 100;
   LENGTH = 1;
   SIZE = 2;
 
@@ -159,10 +162,10 @@ function generate_tunnel(gl) {
     path_cnt--;
     if(path_cnt <= 0 ) {
       path_flag = (-1 + Math.floor(Math.random() * 100)%3);
-      path_cnt = 20;
+      path_cnt = PATH_CNT;
     }
     else {
-      sft += 0.001*path_flag;
+      sft += 0.002*path_flag;
     }
     if(Math.abs(sft) > 0.2) {
       path_flag = -path_flag;
@@ -175,7 +178,7 @@ function generate_tunnel(gl) {
   }
 
   for(let i=0;i<LIMIT;i++) {
-    tunnels.push( new Tunnel(cord[i], SIZE, LENGTH, shift[i], 'brick', gl));
+    tunnels.push( new Tunnel(cord[i], SIZE, LENGTH, shift[i], 'white', gl));
   }
 }
 
