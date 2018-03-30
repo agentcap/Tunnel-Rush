@@ -1,9 +1,10 @@
-function Obstacle(position, size, length, rotation, speed, gl) {
+function Obstacle(position, size, length, rotation, speed, texture_type, gl) {
 	this.position = position;
 	this.size = size;
 	this.rotation = rotation;
 	this.length = length;
 	this.speed = speed;
+	this.texture_type = texture_type;
 
 	var s = size/2;
 	var l = length/2;
@@ -45,15 +46,6 @@ function Obstacle(position, size, length, rotation, speed, gl) {
 	  -s,  l, -s,
 	];
 
-	faceColors = [
-	    [1.0,  1.0,  1.0,  1.0],
-	    [0.0,  0.0,  0.0,  1.0],
-	    [1.0,  1.0,  1.0,  1.0],
-	    [0.0,  0.0,  0.0,  1.0],
-	    [1.0,  1.0,  1.0,  1.0],
-	    [0.0,  0.0,  0.0,  1.0],
-	];
-
 	const indices = [
 	    0,  1,  2,      0,  2,  3,    // front
 	    4,  5,  6,      4,  6,  7,    // back
@@ -62,9 +54,40 @@ function Obstacle(position, size, length, rotation, speed, gl) {
 	    16, 17, 18,     16, 18, 19,   // right
 	    20, 21, 22,     20, 22, 23,   // left
 	];
+  	textureCoordinates = [
+	    // Front
+	    0.0,  0.0,
+	    1.0,  0.0,
+	    1.0,  1.0,
+	    0.0,  1.0,
+	    // Back
+	    0.0,  0.0,
+	    1.0,  0.0,
+	    1.0,  1.0,
+	    0.0,  1.0,
+	    // Top
+	    0.0,  0.0,
+	    1.0,  0.0,
+	    1.0,  1.0,
+	    0.0,  1.0,
+	    // Bottom
+	    0.0,  0.0,
+	    1.0,  0.0,
+	    1.0,  1.0,
+	    0.0,  1.0,
+	    // Right
+	    0.0,  0.0,
+	    1.0,  0.0,
+	    1.0,  1.0,
+	    0.0,  1.0,
+	    // Left
+	    0.0,  0.0,
+	    1.0,  0.0,
+	    1.0,  1.0,
+	    0.0,  1.0,
+  	];
 
-	this.buffers = generate_buffers(gl,positions, faceColors, indices);
-
+	this.buffers = generate_buffers(gl,positions, [], indices, textureCoordinates);
 }
 
 
@@ -74,7 +97,9 @@ Obstacle.prototype.draw = function(gl, programInfo, projectionMatrix, viewMatrix
 	mat4.translate(modelViewMatrix,modelViewMatrix,this.position);
 	mat4.rotate(modelViewMatrix,modelViewMatrix,this.rotation*Math.PI/180,[0, 0, 1]);
     mat4.multiply(modelViewMatrix,viewMatrix,modelViewMatrix);
-	setAttribute(gl,this.buffers,programInfo,projectionMatrix,modelViewMatrix);
+
+	setAttribute(gl,this.buffers,programInfo,projectionMatrix,modelViewMatrix, 'texture', this.texture_type);
+	
 	{
 		const vertexCount = 36;
 	    const type = gl.UNSIGNED_SHORT;

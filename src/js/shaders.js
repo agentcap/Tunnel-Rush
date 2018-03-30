@@ -1,3 +1,102 @@
+function textureShader(gl) {
+
+  // Vertex shader program
+  const vsSource = `
+    attribute vec4 aVertexPosition;
+    attribute vec2 aTextureCoord;
+    uniform mat4 uModelViewMatrix;
+    uniform mat4 uProjectionMatrix;
+    varying highp vec2 vTextureCoord;
+    void main(void) {
+      gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
+      vTextureCoord = aTextureCoord;
+    }
+  `;
+
+  // Fragment shader program
+  const fsSource = `
+    varying highp vec2 vTextureCoord;
+    uniform sampler2D uSampler;
+    void main(void) {
+      gl_FragColor = texture2D(uSampler, vTextureCoord);
+    }
+  `;
+
+  // Initialize a shader program; this is where all the lighting
+  // for the vertices and so forth is established.
+  const shaderProgram = initShaderProgram(gl, vsSource, fsSource);
+
+  // Collect all the info needed to use the shader program.
+  // Look up which attributes our shader program is using
+  // for aVertexPosition, aVevrtexColor and also
+  // look up uniform locations.
+  programInfo = {
+      program: shaderProgram,
+      attribLocations: {
+        vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
+        textureCoord: gl.getAttribLocation(shaderProgram, 'aTextureCoord'),
+      },
+      uniformLocations: {
+        projectionMatrix: gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
+        modelViewMatrix: gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
+        uSampler: gl.getUniformLocation(shaderProgram, 'uSampler'),
+      },
+  };
+
+  return programInfo;
+}
+
+
+function colorShader(gl) {
+
+  // Vertex shader program
+
+  const vsSource = `
+    attribute vec4 aVertexPosition;
+    attribute vec4 aVertexColor;
+    uniform mat4 uModelViewMatrix;
+    uniform mat4 uProjectionMatrix;
+    varying lowp vec4 vColor;
+    void main(void) {
+      gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
+      vColor = aVertexColor;
+    }
+  `;
+
+  // Fragment shader program
+
+  const fsSource = `
+    varying lowp vec4 vColor;
+    void main(void) {
+      gl_FragColor = vColor;
+    }
+  `;
+
+  // Initialize a shader program; this is where all the lighting
+  // for the vertices and so forth is established.
+  const shaderProgram = initShaderProgram(gl, vsSource, fsSource);
+
+  // Collect all the info needed to use the shader program.
+  // Look up which attributes our shader program is using
+  // for aVertexPosition, aVevrtexColor and also
+  // look up uniform locations.
+  programInfo = {
+    program: shaderProgram,
+    attribLocations: {
+      vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
+      vertexColor: gl.getAttribLocation(shaderProgram, 'aVertexColor'),
+    },
+    uniformLocations: {
+      projectionMatrix: gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
+      modelViewMatrix: gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
+    },
+  };
+
+  return programInfo;
+}
+
+
+
 //
 // Initialize a shader program, so WebGL knows how to draw our data
 //

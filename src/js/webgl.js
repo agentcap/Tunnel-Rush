@@ -1,7 +1,7 @@
 
 // Player Attributes.
 var gravity = 0.0;
-var speed = 10;
+var speed = 5;
 var speed_direction = 0.0;
 var ply_pos = [0,0,0];
 
@@ -23,6 +23,8 @@ var key_left = false;
 var key_right = false;
 var pressedKeys = [];
 
+// Textures
+var texture = [];
 
 main();
 
@@ -40,62 +42,24 @@ function main() {
     return;
   }
 
-  // Vertex shader program
+  // Initialzing shaders
+  programInfo_v = colorShader(gl);
+  programInfo_t = textureShader(gl);
 
-  const vsSource = `
-    attribute vec4 aVertexPosition;
-    attribute vec4 aVertexColor;
-
-    uniform mat4 uModelViewMatrix;
-    uniform mat4 uProjectionMatrix;
-
-    varying lowp vec4 vColor;
-
-    void main(void) {
-      gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
-      vColor = aVertexColor;
-    }
-  `;
-
-  // Fragment shader program
-
-  const fsSource = `
-    varying lowp vec4 vColor;
-
-    void main(void) {
-      gl_FragColor = vColor;
-    }
-  `;
-
-  // Initialize a shader program; this is where all the lighting
-  // for the vertices and so forth is established.
-  const shaderProgram = initShaderProgram(gl, vsSource, fsSource);
-
-  // Collect all the info needed to use the shader program.
-  // Look up which attributes our shader program is using
-  // for aVertexPosition, aVevrtexColor and also
-  // look up uniform locations.
-  const programInfo = {
-    program: shaderProgram,
-    attribLocations: {
-      vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
-      vertexColor: gl.getAttribLocation(shaderProgram, 'aVertexColor'),
-    },
-    uniformLocations: {
-      projectionMatrix: gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
-      modelViewMatrix: gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
-    },
+  // Initialize textures
+  texture = {
+    'brick': loadTexture(gl, 'static/images/brick.png'),
+    'white': loadTexture(gl, 'static/images/white.jpg'),
+    'cube': loadTexture(gl, 'static/images/cubetexture.png'),
+    'fire': loadTexture(gl, 'static/images/fire.jpeg'),
   };
 
-  // Here's where we call the routine that builds all the
-  // objects we'll be drawing.
-  // const buffers = initBuffers(gl);
-  // tunnel = new Tunnel([0,0,0],2,2,0,gl);
+  // Initialize tunnel
   generate_tunnel(gl);
-
-  var then = 0;
+  // obstacles.push( new Obstacle([0,-1,0],1,1,0,1,'cube', gl));
 
   // Draw the scene repeatedly
+  var then = 0;
   function render(now) {
     now *= 0.001;  // convert to seconds
     const deltaTime = now - then;
@@ -105,12 +69,21 @@ function main() {
     tick_inputs();
     detect_collisions(deltaTime);
 
-    drawScene(gl, programInfo, deltaTime);
+    drawScene(gl, programInfo_v, programInfo_t, deltaTime);
     requestAnimationFrame(render);
   }
   requestAnimationFrame(render);
 }
 
+function tick_elements(gl) {
+  extend_tunnel(gl);
+  tick_player();
+  // remove_obstacles();
+
+  for(let i=0;i<obstacles.length;i++) {
+    obstacles[i].tick();
+  }
+}
 
 function detect_collisions(deltaTime) {
   for(let i=0;i<obstacles.length;i++) {
@@ -118,16 +91,6 @@ function detect_collisions(deltaTime) {
       ply_pos[2] += 3;
       speed = 0;
     }
-  }
-}
-
-function tick_elements(gl) {
-  extend_tunnel(gl);
-  tick_player();
-  remove_obstacles();
-
-  for(let i=0;i<obstacles.length;i++) {
-    obstacles[i].tick();
   }
 }
 
@@ -164,28 +127,25 @@ function extend_tunnel(gl) {
         path_flag = (-1 + Math.floor(Math.random() * 100)%3);
         path_cnt = 20;
       }
-      else {
-        sft += 0.001*path_flag;
-      }
-      if(Math.abs(sft) > 0.2) {
-        path_flag = -path_flag;
-      }
-      tunnels.push( new Tunnel([lastCord[0] + tunnels[tunnels.length-1].shift,lastCord[1],lastCord[2] - len], 
-        size, len, sft, gl));
+      else sft += 0.001*path_flag;
+      if(Math.abs(sft) > 0.4) path_flag = -path_flag;
 
+      // Extending tunnel
+      tunnels.push( new Tunnel([lastCord[0] + tunnels[tunnels.length-1].shift,lastCord[1],lastCord[2] - len], 
+        size, len, sft, 'white', gl));
+
+      // Generating Obstacles randomly
       if(Math.floor(Math.random() * 60)%60 == 0) {
-        console.log(obstacles.length);
-        console.log(obstacles);
         obstacles.push( new Obstacle([lastCord[0] + tunnels[tunnels.length-1].shift,lastCord[1],lastCord[2] - len],
-            size/3,2*size,Math.floor(Math.random() * 360),1,gl));
+            size/3,2*size,Math.floor(Math.random() * 360),1,'fire',gl));
       }
     }
   }
 }
 
 function generate_tunnel(gl) {
-  LIMIT = 100;
-  LENGTH = 0.5;
+  LIMIT = 25;
+  LENGTH = 1;
   SIZE = 2;
 
   xpos = 0.0;
@@ -215,7 +175,7 @@ function generate_tunnel(gl) {
   }
 
   for(let i=0;i<LIMIT;i++) {
-    tunnels.push( new Tunnel(cord[i], SIZE, LENGTH, shift[i], gl));
+    tunnels.push( new Tunnel(cord[i], SIZE, LENGTH, shift[i], 'brick', gl));
   }
 }
 
@@ -223,7 +183,7 @@ function generate_tunnel(gl) {
 //
 // Draw the scene.
 //
-function drawScene(gl, programInfo, deltaTime) {
+function drawScene(gl, programInfo_v, programInfo_t, deltaTime) {
   gl.clearColor(0.0, 0.0, 0.0, 1.0);  // Clear to black, fully opaque
   gl.clearDepth(1.0);                 // Clear everything
   gl.enable(gl.DEPTH_TEST);           // Enable depth testing
@@ -245,6 +205,8 @@ function drawScene(gl, programInfo, deltaTime) {
                    aspect,
                    zNear,
                    zFar);
+
+  // Calculating Look Vector
   const r = 1;
   const eye = [ply_pos[0] + r*Math.sin(gravity*Math.PI/180),ply_pos[1] + -r*Math.cos(gravity*Math.PI/180),ply_pos[2]];
   const look = [Math.sin(look_angle) + ply_pos[0] + r*Math.sin(gravity*Math.PI/180),ply_pos[1] + -r*Math.cos(gravity*Math.PI/180),-Math.cos(look_angle)+ ply_pos[2]];
@@ -252,7 +214,7 @@ function drawScene(gl, programInfo, deltaTime) {
   mat4.lookAt(viewMatrix, eye, look, up);
 
   for(let i=0;i<tunnels.length;i++) {
-    tunnels[i].draw(gl, programInfo,projectionMatrix, viewMatrix);
+    tunnels[i].draw(gl, programInfo_t,projectionMatrix, viewMatrix);
   }
 
   for(let i=0;i<obstacles.length;i++) {
@@ -263,99 +225,11 @@ function drawScene(gl, programInfo, deltaTime) {
   ply_pos[2] -= deltaTime*speed;
 }
 
-function setAttribute(gl, buffers, programInfo, projectionMatrix, modelViewMatrix) {
-  // Tell WebGL how to pull out the positions from the position
-    // buffer into the vertexPosition attribute
-  {
-    const numComponents = 3;
-    const type = gl.FLOAT;
-    const normalize = false;
-    const stride = 0;
-    const offset = 0;
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.position);
-    gl.vertexAttribPointer(
-        programInfo.attribLocations.vertexPosition,
-        numComponents,
-        type,
-        normalize,
-        stride,
-        offset);
-    gl.enableVertexAttribArray(
-        programInfo.attribLocations.vertexPosition);
-  }
-
-  // Tell WebGL how to pull out the colors from the color buffer
-  // into the vertexColor attribute.
-  {
-    const numComponents = 4;
-    const type = gl.FLOAT;
-    const normalize = false;
-    const stride = 0;
-    const offset = 0;
-    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.color);
-    gl.vertexAttribPointer(
-        programInfo.attribLocations.vertexColor,
-        numComponents,
-        type,
-        normalize,
-        stride,
-        offset);
-    gl.enableVertexAttribArray(
-        programInfo.attribLocations.vertexColor);
-  }
-
-  // Tell WebGL which indices to use to index the vertices
-  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.indices);
-
-  // Tell WebGL to use our program when drawing
-  gl.useProgram(programInfo.program);
-
-  // Set the shader uniforms
-
-  gl.uniformMatrix4fv(
-      programInfo.uniformLocations.projectionMatrix,
-      false,
-      projectionMatrix);
-  gl.uniformMatrix4fv(
-      programInfo.uniformLocations.modelViewMatrix,
-      false,
-      modelViewMatrix);
-}
-
-function generate_buffers(gl, positions, colors, indices) {
-  const positionBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
-
-    // Convert the array of colors into a table for all the vertices.
-    var colors = [];
-    for (let j = 0; j < faceColors.length; ++j) {
-      const c = faceColors[j];
-
-      // Repeat each color four times for the four vertices of the face
-    colors = colors.concat(c, c, c, c);
-  }
-  const colorBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
-
-
-  const indexBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(indices), gl.STATIC_DRAW);
-
-  return {
-    position: positionBuffer,
-    color: colorBuffer,
-    indices: indexBuffer,
-  };
-}
-
 function tick_inputs() {
   if (pressedKeys[37]) gravity -= 5;
   if (pressedKeys[39]) gravity += 5;
-  // if (pressedKeys[38]) ply_pos[2] -= 0.25;
-  // if (pressedKeys[40]) ply_pos[2] += 0.25;
+  if (pressedKeys[38]) ply_pos[2] -= 0.25;
+  if (pressedKeys[40]) ply_pos[2] += 0.25;
 }
 
 window.onkeyup = function(e) { pressedKeys[e.keyCode] = false; }

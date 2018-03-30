@@ -1,8 +1,9 @@
-function Tunnel(position, side, length, shift, gl) {
+function Tunnel(position, side, length, shift, texture_type, gl) {
 	this.position = position;
 	this.length = length;
 	this.side = side;
 	this.shift = shift;
+	this.texture_type = texture_type;
 
 	const positions = [];
 
@@ -27,27 +28,25 @@ function Tunnel(position, side, length, shift, gl) {
 		positions[idx++] = -length;
 	}
 
-  	faceColors = [
-	    [1.0,  1.0,  1.0,  1.0],    // Front face: white
-	    [1.0,  0.0,  0.0,  1.0],    // Back face: red
-	    [0.0,  1.0,  0.0,  1.0],    // Top face: green
-	    [0.0,  0.0,  1.0,  1.0],    // Bottom face: blue
-	    [1.0,  1.0,  0.0,  1.0],    // Right face: yellow
-	    [1.0,  0.0,  1.0,  1.0],    // Left face: purple
-	    [1.0,  0.0,  0.0,  1.0],    // Back face: red
-	    [0.0,  1.0,  0.0,  1.0],    // Top face: green
-  	];
-
-  	faceColors = shuffle(faceColors);
 
   	indices = [];
-
   	for(let i=0;i<8;i++) {
   		idx = [i*4, i*4+1, i*4+2, i*4+1, i*4+2, i*4+3];
   		indices = indices.concat(idx);
   	}
 
-  	this.buffers = generate_buffers(gl,positions, faceColors, indices);
+  	textureCoordinates = [];
+  	textcnd = [
+  		0.0, 0.0,
+  		1.0, 0.0,
+  		0.0, 1.0,
+  		1.1, 1.1,
+  	];
+  	for(let i=0;i<8;i++) {
+  		textureCoordinates = textureCoordinates.concat(textcnd);
+  	}
+
+  	this.buffers = generate_buffers(gl,positions, [], indices, textureCoordinates);
 }
 
 Tunnel.prototype.draw = function(gl, programInfo, projectionMatrix, viewMatrix) {
@@ -57,7 +56,7 @@ Tunnel.prototype.draw = function(gl, programInfo, projectionMatrix, viewMatrix) 
     mat4.multiply(modelViewMatrix,viewMatrix,modelViewMatrix);
 	// mat4.rotate(modelViewMatrix,modelViewMatrix,this.rotation*Math.PI/180,[0, 0, 1]);
 
-	setAttribute(gl,this.buffers,programInfo,projectionMatrix,modelViewMatrix);
+	setAttribute(gl,this.buffers,programInfo,projectionMatrix,modelViewMatrix, 'texture', this.texture_type);
 
 	{
 		const vertexCount = 48;

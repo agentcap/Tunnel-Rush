@@ -1,6 +1,37 @@
-function setAttribute(gl, buffers, programInfo, projectionMatrix, modelViewMatrix) {
-  // Tell WebGL how to pull out the positions from the position
-    // buffer into the vertexPosition attribute
+function generate_buffers(gl, positions, colors, indices, textures) {
+
+  // Positions Buffer
+  const positionBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+
+  // Index Buffer
+  const indexBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
+  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(indices), gl.STATIC_DRAW);
+
+  // Color Buffer
+  const colorBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
+
+  // Textures Buffer
+  const textureCoordBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, textureCoordBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordinates),
+    gl.STATIC_DRAW);
+
+  return {
+    position: positionBuffer,
+    color: colorBuffer,
+    indices: indexBuffer,
+    textureCoord: textureCoordBuffer,
+  };
+}
+
+function setAttribute(gl, buffers, programInfo, projectionMatrix, modelViewMatrix, type, img_name) {
+  
+  // VertexPosition 
   {
     const numComponents = 3;
     const type = gl.FLOAT;
@@ -19,9 +50,20 @@ function setAttribute(gl, buffers, programInfo, projectionMatrix, modelViewMatri
         programInfo.attribLocations.vertexPosition);
   }
 
-  // Tell WebGL how to pull out the colors from the color buffer
-  // into the vertexColor attribute.
-  {
+  // Textures
+  if(type == 'texture') {
+    const num = 2; // every coordinate composed of 2 values
+    const type = gl.FLOAT; // the data in the buffer is 32 bit float
+    const normalize = false; // don't normalize
+    const stride = 0; // how many bytes to get from one set to the next
+    const offset = 0; // how many bytes inside the buffer to start from
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.textureCoord);
+    gl.vertexAttribPointer(programInfo.attribLocations.textureCoord, num, type, normalize, stride, offset);
+    gl.enableVertexAttribArray(programInfo.attribLocations.textureCoord);
+  }
+
+  // Colors
+  else {
     const numComponents = 4;
     const type = gl.FLOAT;
     const normalize = false;
@@ -39,14 +81,15 @@ function setAttribute(gl, buffers, programInfo, projectionMatrix, modelViewMatri
         programInfo.attribLocations.vertexColor);
   }
 
-  // Tell WebGL which indices to use to index the vertices
+  // Indices
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.indices);
 
-  // Tell WebGL to use our program when drawing
+  // Program 
   gl.useProgram(programInfo.program);
 
-  // Set the shader uniforms
 
+
+  // Shader uniforms
   gl.uniformMatrix4fv(
       programInfo.uniformLocations.projectionMatrix,
       false,
@@ -55,33 +98,15 @@ function setAttribute(gl, buffers, programInfo, projectionMatrix, modelViewMatri
       programInfo.uniformLocations.modelViewMatrix,
       false,
       modelViewMatrix);
-}
+  if(type == 'texture') {
+    // Tell WebGL we want to affect texture unit 0
+    gl.activeTexture(gl.TEXTURE0);
 
-function generate_buffers(gl, positions, colors, indices) {
-  const positionBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, positionBuffer);
-    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(positions), gl.STATIC_DRAW);
+    // Bind the texture to texture unit 0
+    gl.bindTexture(gl.TEXTURE_2D, texture[img_name]);
 
-    // Convert the array of colors into a table for all the vertices.
-    var colors = [];
-    for (let j = 0; j < faceColors.length; ++j) {
-      const c = faceColors[j];
-
-      // Repeat each color four times for the four vertices of the face
-    colors = colors.concat(c, c, c, c);
+    // Tell the shader we bound the texture to texture unit 0
+    gl.uniform1i(programInfo.uniformLocations.uSampler, 0);
+    
   }
-  const colorBuffer = gl.createBuffer();
-  gl.bindBuffer(gl.ARRAY_BUFFER, colorBuffer);
-  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(colors), gl.STATIC_DRAW);
-
-
-  const indexBuffer = gl.createBuffer();
-    gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, indexBuffer);
-  gl.bufferData(gl.ELEMENT_ARRAY_BUFFER,new Uint16Array(indices), gl.STATIC_DRAW);
-
-  return {
-    position: positionBuffer,
-    color: colorBuffer,
-    indices: indexBuffer,
-  };
 }
