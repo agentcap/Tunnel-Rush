@@ -48,8 +48,6 @@ function Tunnel(position, side, length, shift, texture_type, gl) {
 		positions[idx++] = -length;
 	}
 
-	console.log(vertexNormals);
-
   	indices = [];
   	for(let i=0;i<8;i++) {
   		idx = [i*4, i*4+1, i*4+2, i*4+1, i*4+2, i*4+3];
@@ -70,12 +68,19 @@ function Tunnel(position, side, length, shift, texture_type, gl) {
   	this.buffers = generate_buffers(gl,positions, [], indices, textureCoordinates, vertexNormals);
 }
 
-Tunnel.prototype.draw = function(gl, programInfo, projectionMatrix, viewMatrix) {
+Tunnel.prototype.draw = function(gl, programInfo, projectionMatrix, viewMatrix, ply_pos) {
   	const modelMatrix = mat4.create();
+
+  	viewPos = vec3.create();
+  	viewPos[0] = ply_pos[0];
+  	viewPos[1] = ply_pos[1];
+  	viewPos[2] = ply_pos[2];
+  	lPosition = viewPos;
 
 	mat4.translate(modelMatrix,modelMatrix,this.position);
 
-	setAttribute(gl,this.buffers,programInfo,projectionMatrix,modelMatrix,viewMatrix, 'texturenormal', this.texture_type);
+	setAttribute(gl,this.buffers,programInfo,projectionMatrix,modelMatrix,viewMatrix, 
+		'texturenormal', this.texture_type, viewPos, lPosition);
 
 	{
 		const vertexCount = 48;

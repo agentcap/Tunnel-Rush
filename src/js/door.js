@@ -1,12 +1,12 @@
-function Obstacle(position, size, length, rotation, speed, texture_type, gl) {
+function Door(position, width, length, rotation, speed, texture_type, gl) {
 	this.position = position;
-	this.size = size;
+	this.width = width;
 	this.rotation = rotation;
 	this.length = length;
 	this.speed = speed;
 	this.texture_type = texture_type;
 
-	var s = size/2;
+	var w = width/2;
 	var l = length/2;
 	
 	positions = [
@@ -131,21 +131,14 @@ function Obstacle(position, size, length, rotation, speed, texture_type, gl) {
 }
 
 
-Obstacle.prototype.draw = function(gl, programInfo, projectionMatrix, viewMatrix, ply_pos) {
+Obstacle.prototype.draw = function(gl, programInfo, projectionMatrix, viewMatrix) {
   	const modelMatrix = mat4.create();
-
-  	viewPos = vec3.create();
-  	viewPos[0] = ply_pos[0];
-  	viewPos[1] = ply_pos[1];
-  	viewPos[2] = ply_pos[2];
-  	lPosition = viewPos;
 
 	mat4.translate(modelMatrix,modelMatrix,this.position);
 	mat4.rotate(modelMatrix,modelMatrix,this.rotation*Math.PI/180,[0, 0, 1]);
 	mat4.rotate(modelMatrix,modelMatrix,this.rotation*Math.PI/180,[0, 1, 0]);
 
-	setAttribute(gl,this.buffers,programInfo,projectionMatrix,modelMatrix,viewMatrix, 
-		'texturenormal', this.texture_type, viewPos, lPosition);
+	setAttribute(gl,this.buffers,programInfo,projectionMatrix,modelMatrix,viewMatrix, 'texturenormal', this.texture_type);
 	
 	{
 		const vertexCount = 36;

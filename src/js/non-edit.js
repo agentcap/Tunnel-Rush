@@ -38,7 +38,7 @@ function generate_buffers(gl, positions, colors, indices, textures, vertexNormal
   };
 }
 
-function setAttribute(gl, buffers, programInfo, projectionMatrix, modelMatrix, viewMatrix, type, img_name) {
+function setAttribute(gl, buffers, programInfo, projectionMatrix, modelMatrix, viewMatrix, type, img_name, viewPos,lPosition) {
   
   // VertexPosition 
   {
@@ -127,6 +127,14 @@ function setAttribute(gl, buffers, programInfo, projectionMatrix, modelMatrix, v
       programInfo.uniformLocations.viewMatrix,
       false,
       viewMatrix);
+
+  gl.uniform3f(
+      programInfo.uniformLocations.viewPos,
+      viewPos[0], viewPos[1], viewPos[2]);
+
+  gl.uniform3f(
+      programInfo.uniformLocations.lPosition,
+      lPosition[0], lPosition[1], lPosition[2]);
 
   const normalMatrix = mat4.create();
   mat4.invert(normalMatrix, modelMatrix);

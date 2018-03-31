@@ -1,6 +1,6 @@
 
 // Player Attributes.
-var gravity = 0.0;
+var gravity_dir = 0.0;
 var speed = 20;
 var speed_direction = 0.0;
 var ply_pos = [0,0,0];
@@ -52,15 +52,15 @@ function main() {
     'brick': loadTexture(gl, 'static/images/brick.png'),
     'white': loadTexture(gl, 'static/images/white.jpg'),
     'cube': loadTexture(gl, 'static/images/cubetexture.png'),
-    'fire': loadTexture(gl, 'static/images/fire.jpeg'),
+    'fire': loadTexture(gl, 'static/images/brick.png'),
   };
 
   // Initialize tunnel
   generate_tunnel(gl);
   // obstacles.push( new Obstacle([0,-1,0],1,1,0,1,'cube', gl));
   size = 1;
-  // obstacles.push( new Obstacle([0,0,0],
-    // size,size,Math.floor(Math.random() * 360),1,'fire',gl));
+  obstacles.push( new Obstacle([0,0,0],
+    size,size,Math.floor(Math.random() * 360),1,'fire',gl));
 
 
   // Draw the scene repeatedly
@@ -92,7 +92,7 @@ function tick_elements(gl) {
 
 function detect_collisions(deltaTime) {
   for(let i=0;i<obstacles.length;i++) {
-    if(obstacles[i].detect_collision(ply_pos[2],gravity,speed*deltaTime)) {
+    if(obstacles[i].detect_collision(ply_pos[2],gravity_dir,speed*deltaTime)) {
       ply_pos[2] += 3;
       speed = 0;
     }
@@ -144,14 +144,14 @@ function extend_tunnel(gl) {
       // Generating Obstacles randomly
       if(Math.floor(Math.random() * 30)%30 == 0) {
         obstacles.push( new Obstacle([lastCord[0] + tunnels[tunnels.length-2].shift,lastCord[1],lastCord[2] - len],
-            size/3,2*size,Math.floor(Math.random() * 360),1,'fire',gl));
+            size/3,2*size,Math.floor(Math.random() * 360),2,'fire',gl));
       }
     }
   }
 }
 
 function generate_tunnel(gl) {
-  LIMIT = 0;
+  LIMIT = 100;
   LENGTH = 1;
   SIZE = 2;
 
@@ -215,17 +215,17 @@ function drawScene(gl, programInfo_v, programInfo_t, deltaTime) {
 
   // Calculating Look Vector
   const r = 1;
-  const eye = [ply_pos[0] + r*Math.sin(gravity*Math.PI/180),ply_pos[1] + -r*Math.cos(gravity*Math.PI/180),ply_pos[2]];
-  const look = [Math.sin(look_angle) + ply_pos[0] + r*Math.sin(gravity*Math.PI/180),ply_pos[1] + -r*Math.cos(gravity*Math.PI/180),-Math.cos(look_angle)+ ply_pos[2]];
-  const up = [-Math.sin(gravity*Math.PI/180),Math.cos(gravity*Math.PI/180),0];
+  const eye = [ply_pos[0] + r*Math.sin(gravity_dir*Math.PI/180),ply_pos[1] + -r*Math.cos(gravity_dir*Math.PI/180),ply_pos[2]];
+  const look = [Math.sin(look_angle) + ply_pos[0] + r*Math.sin(gravity_dir*Math.PI/180),ply_pos[1] + -r*Math.cos(gravity_dir*Math.PI/180),-Math.cos(look_angle)+ ply_pos[2]];
+  const up = [-Math.sin(gravity_dir*Math.PI/180),Math.cos(gravity_dir*Math.PI/180),0];
   mat4.lookAt(viewMatrix, eye, look, up);
 
   for(let i=0;i<tunnels.length;i++) {
-    tunnels[i].draw(gl, programInfo_t,projectionMatrix, viewMatrix);
+    tunnels[i].draw(gl, programInfo_t,projectionMatrix, viewMatrix, ply_pos);
   }
 
   for(let i=0;i<obstacles.length;i++) {
-    obstacles[i].draw(gl, programInfo,projectionMatrix, viewMatrix);
+    obstacles[i].draw(gl, programInfo,projectionMatrix, viewMatrix, ply_pos);
   }
 
   // Moving the player forward
@@ -233,8 +233,8 @@ function drawScene(gl, programInfo_v, programInfo_t, deltaTime) {
 }
 
 function tick_inputs() {
-  if (pressedKeys[37]) gravity -= 5;
-  if (pressedKeys[39]) gravity += 5;
+  if (pressedKeys[37]) gravity_dir -= 5;
+  if (pressedKeys[39]) gravity_dir += 5;
   if (pressedKeys[38]) ply_pos[2] -= 0.25;
   if (pressedKeys[40]) ply_pos[2] += 0.25;
 }

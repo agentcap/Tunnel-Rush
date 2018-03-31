@@ -29,32 +29,65 @@ function textureShader(gl) {
   // Fragment shader program
   const fsSource = `
     precision mediump float;
+    
+    struct Material {
+      vec3 ambient;
+      vec3 diffuse;
+      vec3 specular;
+      float shininess;
+    };
+
+    struct Light {
+      vec3 position;
+
+      vec3 ambient;
+      vec3 diffuse;
+      vec3 specular;
+    };
+
 
     varying vec2 vTextureCoord;
     varying vec3 vLighting;
     varying vec3 vFragPos, vNormal;
 
     uniform sampler2D uSampler;
+    const vec3 mAmbient = vec3(1.0,1.0,1.0);
+    const vec3 mDiffuse =vec3(1.0,1.0,1.0);
+    const vec3 mSpecular = vec3(1.0,1.0,1.0);
+    const float mShininess = 20.0;
+
+    // const vec3 lPosition = vec3(0,0,2);
+    uniform vec3 lPosition;
+    const vec3 lAmbient = vec3(0.01, 0.01, 0.01);
+    // const vec3 lAmbient = vec3(0.3, 0.3, 0.3);
+    const vec3 lDiffuse = vec3(1.0,1.0,1.0);
+    const vec3 lSpecular = vec3(1.0,1.0,1.0);
+
+    // const vec3 viewPos = vec3(0.0,0.0,2.0);
+    uniform vec3 viewPos;
 
     void main(void) {
       // Ambient Light
-      vec3 ambientLight = vec3(0.3, 0.3, 0.3);
+      vec3 ambientLight = lAmbient * mAmbient;
 
       // Diffuse Light
-      vec3 lightDir = normalize(vec3(0,0,2) - vFragPos);
+      vec3 temp = lPosition-vFragPos;
+      if(temp[2] > 100.0) temp[2] = 100.0;
+      vec3 lightDir = (1.0-temp[2]/100.0)*normalize(lPosition - vFragPos);
       float diff = max(dot(vNormal, lightDir), 0.0);
-      vec3 diffuseLight = diff * vec3(1.0,1.0,1.0);
+      vec3 diffuseLight = lDiffuse * (diff * mDiffuse);
 
       // Specular Light
-      vec3 viewDir = normalize(vec3(0,0,2) - vFragPos);
+      vec3 viewDir = normalize(viewPos - vFragPos);
       vec3 reflectDir = reflect(-lightDir, vNormal);
-      float spec = pow(max(dot(viewDir, reflectDir), 0.0), 20.0);
-      vec3 specularLight = spec * vec3(1.0,1.0,1.0);
+      float spec = pow(max(dot(viewDir, reflectDir), 0.0), mShininess);
+      vec3 specularLight = lSpecular * (spec * mSpecular);
 
       vec3 resultColor = ambientLight + diffuseLight + specularLight;
 
       vec4 texelColor = texture2D(uSampler, vTextureCoord);
       gl_FragColor = vec4(texelColor.rgb * resultColor, texelColor.a);
+      // gl_FragColor = vec4(texelColor.rgb , texelColor.a);
     }
   `;
 
@@ -81,6 +114,8 @@ function textureShader(gl) {
         modelMatrix: gl.getUniformLocation(shaderProgram, 'uModelMatrix'),
         viewMatrix: gl.getUniformLocation(shaderProgram, 'uViewMatrix'),
         normalMatrix: gl.getUniformLocation(shaderProgram, 'uNormalMatrix'),
+        viewPos: gl.getUniformLocation(shaderProgram, 'viewPos'),
+        lPosition: gl.getUniformLocation(shaderProgram, 'lPosition'),
         uSampler: gl.getUniformLocation(shaderProgram, 'uSampler'),
       },
   };
