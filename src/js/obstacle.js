@@ -8,7 +8,8 @@ function Obstacle(position, size, length, rotation, speed, texture_type, gl) {
 
 	var s = size/2;
 	var l = length/2;
-	const positions = [
+	
+	positions = [
 	  // Front face
 	  -s, -l,  s,
 	   s, -l,  s,
@@ -46,7 +47,7 @@ function Obstacle(position, size, length, rotation, speed, texture_type, gl) {
 	  -s,  l, -s,
 	];
 
-	const indices = [
+	indices = [
 	    0,  1,  2,      0,  2,  3,    // front
 	    4,  5,  6,      4,  6,  7,    // back
 	    8,  9,  10,     8,  10, 11,   // top
@@ -54,6 +55,7 @@ function Obstacle(position, size, length, rotation, speed, texture_type, gl) {
 	    16, 17, 18,     16, 18, 19,   // right
 	    20, 21, 22,     20, 22, 23,   // left
 	];
+
   	textureCoordinates = [
 	    // Front
 	    0.0,  0.0,
@@ -87,18 +89,56 @@ function Obstacle(position, size, length, rotation, speed, texture_type, gl) {
 	    0.0,  1.0,
   	];
 
-	this.buffers = generate_buffers(gl,positions, [], indices, textureCoordinates);
+	vertexNormals = [
+	    // Front
+	     0.0,  0.0,  1.0,
+	     0.0,  0.0,  1.0,
+	     0.0,  0.0,  1.0,
+	     0.0,  0.0,  1.0,
+
+	    // Back
+	     0.0,  0.0, -1.0,
+	     0.0,  0.0, -1.0,
+	     0.0,  0.0, -1.0,
+	     0.0,  0.0, -1.0,
+
+	    // Top
+	     0.0,  1.0,  0.0,
+	     0.0,  1.0,  0.0,
+	     0.0,  1.0,  0.0,
+	     0.0,  1.0,  0.0,
+
+	    // Bottom
+	     0.0, -1.0,  0.0,
+	     0.0, -1.0,  0.0,
+	     0.0, -1.0,  0.0,
+	     0.0, -1.0,  0.0,
+
+	    // Right
+	     1.0,  0.0,  0.0,
+	     1.0,  0.0,  0.0,
+	     1.0,  0.0,  0.0,
+	     1.0,  0.0,  0.0,
+
+	    // Left
+	    -1.0,  0.0,  0.0,
+	    -1.0,  0.0,  0.0,
+	    -1.0,  0.0,  0.0,
+	    -1.0,  0.0,  0.0
+	];
+
+	this.buffers = generate_buffers(gl,positions, [], indices, textureCoordinates, vertexNormals);
 }
 
 
 Obstacle.prototype.draw = function(gl, programInfo, projectionMatrix, viewMatrix) {
-  	const modelViewMatrix = mat4.create();
+  	const modelMatrix = mat4.create();
 
-	mat4.translate(modelViewMatrix,modelViewMatrix,this.position);
-	mat4.rotate(modelViewMatrix,modelViewMatrix,this.rotation*Math.PI/180,[0, 0, 1]);
-    mat4.multiply(modelViewMatrix,viewMatrix,modelViewMatrix);
+	mat4.translate(modelMatrix,modelMatrix,this.position);
+	mat4.rotate(modelMatrix,modelMatrix,this.rotation*Math.PI/180,[0, 0, 1]);
+	mat4.rotate(modelMatrix,modelMatrix,this.rotation*Math.PI/180,[0, 1, 0]);
 
-	setAttribute(gl,this.buffers,programInfo,projectionMatrix,modelViewMatrix, 'texture', this.texture_type);
+	setAttribute(gl,this.buffers,programInfo,projectionMatrix,modelMatrix,viewMatrix, 'texturenormal', this.texture_type);
 	
 	{
 		const vertexCount = 36;
@@ -122,14 +162,13 @@ Obstacle.prototype.detect_collision = function(pos, rotation, speed) {
 		(front_face > pos && pos > back_face);
 
 	var comb = [];
-	var tolr = 20;
+	var tolr = 30;
 	for(let i=0;i<5;i++) {
 		comb.push([this.rotation+i*180-tolr,this.rotation+i*180+tolr]);
 		comb.push([this.rotation-i*180-tolr,this.rotation-i*180+tolr]);
 	}
 
 	if(collide == true) {
-		console.log(this.position, pos);
 		for(let i=0;i<10;i++) {
 			if(comb[i][0] < rotation && rotation < comb[i][1]) return true;
 		}

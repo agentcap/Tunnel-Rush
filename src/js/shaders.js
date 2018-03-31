@@ -2,26 +2,65 @@ function textureShader(gl) {
 
   // Vertex shader program
   const vsSource = `
+    precision mediump float;
+    
     attribute vec4 aVertexPosition;
+    attribute vec3 aVertexNormal;
     attribute vec2 aTextureCoord;
-    uniform mat4 uModelViewMatrix;
+
+    uniform mat4 uNormalMatrix;
+    uniform mat4 uModelMatrix;
+    uniform mat4 uViewMatrix;
     uniform mat4 uProjectionMatrix;
-    varying highp vec2 vTextureCoord;
+
+    varying vec2 vTextureCoord;
+    varying vec3 vLighting;
+    varying vec3 vFragPos, vNormal;
+
     void main(void) {
-      gl_Position = uProjectionMatrix * uModelViewMatrix * aVertexPosition;
+      gl_Position = uProjectionMatrix * uViewMatrix * uModelMatrix * aVertexPosition;
       vTextureCoord = aTextureCoord;
+
+      vFragPos = vec3(uModelMatrix * aVertexPosition);
+      vNormal  = normalize(vec3(uNormalMatrix * vec4(aVertexNormal, 1.0)));
     }
   `;
 
   // Fragment shader program
   const fsSource = `
-    varying highp vec2 vTextureCoord;
+    precision mediump float;
+
+    varying vec2 vTextureCoord;
+    varying vec3 vLighting;
+    varying vec3 vFragPos, vNormal;
+
     uniform sampler2D uSampler;
+
     void main(void) {
-      gl_FragColor = texture2D(uSampler, vTextureCoord);
+      // Ambient Light
+      vec3 ambientLight = vec3(0.3, 0.3, 0.3);
+
+      // Diffuse Light
+      vec3 lightDir = normalize(vec3(0,0,2) - vFragPos);
+      float diff = max(dot(vNormal, lightDir), 0.0);
+      vec3 diffuseLight = diff * vec3(1.0,1.0,1.0);
+
+      // Specular Light
+      vec3 viewDir = normalize(vec3(0,0,2) - vFragPos);
+      vec3 reflectDir = reflect(-lightDir, vNormal);
+      float spec = pow(max(dot(viewDir, reflectDir), 0.0), 20.0);
+      vec3 specularLight = spec * vec3(1.0,1.0,1.0);
+
+      vec3 resultColor = ambientLight + diffuseLight + specularLight;
+
+      vec4 texelColor = texture2D(uSampler, vTextureCoord);
+      gl_FragColor = vec4(texelColor.rgb * resultColor, texelColor.a);
     }
   `;
 
+  function pow(a,b) {
+    return Math.pow(a,b);
+  }
   // Initialize a shader program; this is where all the lighting
   // for the vertices and so forth is established.
   const shaderProgram = initShaderProgram(gl, vsSource, fsSource);
@@ -34,11 +73,14 @@ function textureShader(gl) {
       program: shaderProgram,
       attribLocations: {
         vertexPosition: gl.getAttribLocation(shaderProgram, 'aVertexPosition'),
+        vertexNormal: gl.getAttribLocation(shaderProgram, 'aVertexNormal'),
         textureCoord: gl.getAttribLocation(shaderProgram, 'aTextureCoord'),
       },
       uniformLocations: {
         projectionMatrix: gl.getUniformLocation(shaderProgram, 'uProjectionMatrix'),
-        modelViewMatrix: gl.getUniformLocation(shaderProgram, 'uModelViewMatrix'),
+        modelMatrix: gl.getUniformLocation(shaderProgram, 'uModelMatrix'),
+        viewMatrix: gl.getUniformLocation(shaderProgram, 'uViewMatrix'),
+        normalMatrix: gl.getUniformLocation(shaderProgram, 'uNormalMatrix'),
         uSampler: gl.getUniformLocation(shaderProgram, 'uSampler'),
       },
   };

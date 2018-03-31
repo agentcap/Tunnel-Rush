@@ -1,4 +1,4 @@
-function generate_buffers(gl, positions, colors, indices, textures) {
+function generate_buffers(gl, positions, colors, indices, textures, vertexNormals) {
 
   // Positions Buffer
   const positionBuffer = gl.createBuffer();
@@ -21,15 +21,24 @@ function generate_buffers(gl, positions, colors, indices, textures) {
   gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(textureCoordinates),
     gl.STATIC_DRAW);
 
+  // Normals Buffer
+  const normalBuffer = gl.createBuffer();
+  gl.bindBuffer(gl.ARRAY_BUFFER, normalBuffer);
+  gl.bufferData(gl.ARRAY_BUFFER, new Float32Array(vertexNormals),
+                gl.STATIC_DRAW);
+
+
+
   return {
     position: positionBuffer,
     color: colorBuffer,
     indices: indexBuffer,
     textureCoord: textureCoordBuffer,
+    normal: normalBuffer,
   };
 }
 
-function setAttribute(gl, buffers, programInfo, projectionMatrix, modelViewMatrix, type, img_name) {
+function setAttribute(gl, buffers, programInfo, projectionMatrix, modelMatrix, viewMatrix, type, img_name) {
   
   // VertexPosition 
   {
@@ -51,7 +60,7 @@ function setAttribute(gl, buffers, programInfo, projectionMatrix, modelViewMatri
   }
 
   // Textures
-  if(type == 'texture') {
+  if(type == 'texture' || type == 'texturenormal') {
     const num = 2; // every coordinate composed of 2 values
     const type = gl.FLOAT; // the data in the buffer is 32 bit float
     const normalize = false; // don't normalize
@@ -81,13 +90,29 @@ function setAttribute(gl, buffers, programInfo, projectionMatrix, modelViewMatri
         programInfo.attribLocations.vertexColor);
   }
 
+  if(type == 'texturenormal') {
+    const numComponents = 3;
+    const type = gl.FLOAT;
+    const normalize = false;
+    const stride = 0;
+    const offset = 0;
+    gl.bindBuffer(gl.ARRAY_BUFFER, buffers.normal);
+    gl.vertexAttribPointer(
+        programInfo.attribLocations.vertexNormal,
+        numComponents,
+        type,
+        normalize,
+        stride,
+        offset);
+    gl.enableVertexAttribArray(
+        programInfo.attribLocations.vertexNormal);
+  }
+
   // Indices
   gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, buffers.indices);
 
   // Program 
   gl.useProgram(programInfo.program);
-
-
 
   // Shader uniforms
   gl.uniformMatrix4fv(
@@ -95,10 +120,24 @@ function setAttribute(gl, buffers, programInfo, projectionMatrix, modelViewMatri
       false,
       projectionMatrix);
   gl.uniformMatrix4fv(
-      programInfo.uniformLocations.modelViewMatrix,
+      programInfo.uniformLocations.modelMatrix,
       false,
-      modelViewMatrix);
-  if(type == 'texture') {
+      modelMatrix);
+  gl.uniformMatrix4fv(
+      programInfo.uniformLocations.viewMatrix,
+      false,
+      viewMatrix);
+
+  const normalMatrix = mat4.create();
+  mat4.invert(normalMatrix, modelMatrix);
+  mat4.transpose(normalMatrix, normalMatrix);
+
+  gl.uniformMatrix4fv(
+      programInfo.uniformLocations.normalMatrix,
+      false,
+      normalMatrix);
+
+  if(type == 'texture' || type == 'texturenormal') {
     // Tell WebGL we want to affect texture unit 0
     gl.activeTexture(gl.TEXTURE0);
 

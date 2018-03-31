@@ -5,18 +5,38 @@ function Tunnel(position, side, length, shift, texture_type, gl) {
 	this.shift = shift;
 	this.texture_type = texture_type;
 
-	const positions = [];
+	positions = [];
+	vertexNormals = [];
 
 	var idx = 0;
 	theta = -22.5;
+	norm_t = 0;
 	for(let i=0;i<8;i++) {
 		positions[idx++] = side * Math.cos(theta*Math.PI/180);
 		positions[idx++] = side * Math.sin(theta*Math.PI/180);
 		positions[idx++] = 0;
+		vertexNormals.concat([-Math.cos(norm_t*Math.PI/180), -Math.sin(norm_t*Math.PI/180), 0])
 
 		positions[idx++] = shift + side * Math.cos(theta*Math.PI/180);
 		positions[idx++] = side * Math.sin(theta*Math.PI/180);
 		positions[idx++] = -length;
+
+		A = vec3.create();
+		A[0] = shift;
+		A[1] = 0.0;
+		A[2] = -length;
+		
+		B = vec3.create();
+		B[0] = Math.cos(theta*Math.PI/180) - Math.cos((theta+45)*Math.PI/180);
+		B[1] = Math.sin(theta*Math.PI/180) - Math.sin((theta+45)*Math.PI/180);
+		B[2] = 0;
+
+		C = vec3.create();
+		vec3.cross(C,A,B);
+		vertexNormals = vertexNormals.concat(C.toString().split(','));
+		vertexNormals = vertexNormals.concat(C.toString().split(','));
+		vertexNormals = vertexNormals.concat(C.toString().split(','));
+		vertexNormals = vertexNormals.concat(C.toString().split(','));
 
 		theta += 45;
 		positions[idx++] = side * Math.cos(theta*Math.PI/180);
@@ -28,6 +48,7 @@ function Tunnel(position, side, length, shift, texture_type, gl) {
 		positions[idx++] = -length;
 	}
 
+	console.log(vertexNormals);
 
   	indices = [];
   	for(let i=0;i<8;i++) {
@@ -46,17 +67,15 @@ function Tunnel(position, side, length, shift, texture_type, gl) {
   		textureCoordinates = textureCoordinates.concat(textcnd);
   	}
 
-  	this.buffers = generate_buffers(gl,positions, [], indices, textureCoordinates);
+  	this.buffers = generate_buffers(gl,positions, [], indices, textureCoordinates, vertexNormals);
 }
 
 Tunnel.prototype.draw = function(gl, programInfo, projectionMatrix, viewMatrix) {
-  	const modelViewMatrix = mat4.create();
+  	const modelMatrix = mat4.create();
 
-	mat4.translate(modelViewMatrix,modelViewMatrix,this.position);
-    mat4.multiply(modelViewMatrix,viewMatrix,modelViewMatrix);
-	// mat4.rotate(modelViewMatrix,modelViewMatrix,this.rotation*Math.PI/180,[0, 0, 1]);
+	mat4.translate(modelMatrix,modelMatrix,this.position);
 
-	setAttribute(gl,this.buffers,programInfo,projectionMatrix,modelViewMatrix, 'texture', this.texture_type);
+	setAttribute(gl,this.buffers,programInfo,projectionMatrix,modelMatrix,viewMatrix, 'texturenormal', this.texture_type);
 
 	{
 		const vertexCount = 48;

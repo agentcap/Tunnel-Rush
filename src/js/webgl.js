@@ -58,6 +58,10 @@ function main() {
   // Initialize tunnel
   generate_tunnel(gl);
   // obstacles.push( new Obstacle([0,-1,0],1,1,0,1,'cube', gl));
+  size = 1;
+  // obstacles.push( new Obstacle([0,0,0],
+    // size,size,Math.floor(Math.random() * 360),1,'fire',gl));
+
 
   // Draw the scene repeatedly
   var then = 0;
@@ -79,7 +83,7 @@ function main() {
 function tick_elements(gl) {
   extend_tunnel(gl);
   tick_player();
-  // remove_obstacles();
+  remove_obstacles();
 
   for(let i=0;i<obstacles.length;i++) {
     obstacles[i].tick();
@@ -131,8 +135,8 @@ function extend_tunnel(gl) {
       else sft += 0.003*path_flag;
       if(Math.abs(sft) > 0.2) path_flag = -path_flag;
 
-      type = 'white';
-      if(Math.floor(Math.random() * 4)%4 == 0) type = 'brick';
+      type = 'brick';
+      if(Math.floor(Math.random() * 4)%4 == 0) type = 'white';
       // Extending tunnel
       tunnels.push( new Tunnel([lastCord[0] + tunnels[tunnels.length-1].shift,lastCord[1],lastCord[2] - len], 
         size, len, sft, type, gl));
@@ -147,7 +151,7 @@ function extend_tunnel(gl) {
 }
 
 function generate_tunnel(gl) {
-  LIMIT = 100;
+  LIMIT = 0;
   LENGTH = 1;
   SIZE = 2;
 
