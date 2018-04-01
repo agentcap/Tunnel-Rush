@@ -4,6 +4,10 @@ var gravity_dir = 0.0;
 var speed = 20;
 var speed_direction = 0.0;
 var ply_pos = [0,0,0];
+var ply_height = -1;
+var speed_v = 0;
+var jump_speed = 0.07;
+var gravity = 0.004;
 
 // Objects in the Game
 
@@ -18,6 +22,7 @@ var path_flag = 0;
 
 // Obstacles
 var obstacles = new Array();
+var doors = new Array();
 
 // Keys
 var key_left = false;
@@ -52,16 +57,16 @@ function main() {
     'brick': loadTexture(gl, 'static/images/brick.png'),
     'white': loadTexture(gl, 'static/images/white.jpg'),
     'cube': loadTexture(gl, 'static/images/cubetexture.png'),
-    'fire': loadTexture(gl, 'static/images/brick.png'),
+    'fire': loadTexture(gl, 'static/images/fire.jpeg'),
   };
 
   // Initialize tunnel
   generate_tunnel(gl);
   // obstacles.push( new Obstacle([0,-1,0],1,1,0,1,'cube', gl));
   size = 1;
-  obstacles.push( new Obstacle([0,0,0],
-    size,size,Math.floor(Math.random() * 360),1,'fire',gl));
-
+  // obstacles.push( new Obstacle([0,0,0],
+    // size,size,Math.floor(Math.random() * 360),1,'fire',gl));
+    // doors.push( new Door([0,0,0],0.4,1.5,30,0,'fire',gl));
 
   // Draw the scene repeatedly
   var then = 0;
@@ -88,11 +93,20 @@ function tick_elements(gl) {
   for(let i=0;i<obstacles.length;i++) {
     obstacles[i].tick();
   }
+  for(let i=0;i<doors.length;i++) {
+    doors[i].tick();
+  }
 }
 
 function detect_collisions(deltaTime) {
   for(let i=0;i<obstacles.length;i++) {
     if(obstacles[i].detect_collision(ply_pos[2],gravity_dir,speed*deltaTime)) {
+      ply_pos[2] += 3;
+      speed = 0;
+    }
+  }
+  for(let i=0;i<doors.length;i++) {
+    if(doors[i].detect_collision(ply_pos[2],gravity_dir,speed*deltaTime,ply_height)) {
       ply_pos[2] += 3;
       speed = 0;
     }
@@ -109,6 +123,14 @@ function tick_player() {
 
       break;
     }
+  }
+
+  ply_height += speed_v;
+  speed_v -= gravity;
+
+  if(ply_height < -1) {
+    ply_height = -1;
+    speed_v = 0;
   }
 }
 
@@ -143,15 +165,23 @@ function extend_tunnel(gl) {
 
       // Generating Obstacles randomly
       if(Math.floor(Math.random() * 30)%30 == 0) {
+        if(Math.floor(Math.random() * 2)%2 == 0) {
+          doors.push( new Door([lastCord[0] + tunnels[tunnels.length-2].shift,lastCord[1],lastCord[2] - len]
+            ,0.5,1.7,30,2,'fire',gl));
+        }
+        else {
         obstacles.push( new Obstacle([lastCord[0] + tunnels[tunnels.length-2].shift,lastCord[1],lastCord[2] - len],
-            size/3,2*size,Math.floor(Math.random() * 360),2,'fire',gl));
+            size/3,2*size,Math.floor(Math.random() * 360),0,'fire',gl));
+          
+        }
+
       }
     }
   }
 }
 
 function generate_tunnel(gl) {
-  LIMIT = 100;
+  LIMIT = 50;
   LENGTH = 1;
   SIZE = 2;
 
@@ -214,9 +244,9 @@ function drawScene(gl, programInfo_v, programInfo_t, deltaTime) {
                    zFar);
 
   // Calculating Look Vector
-  const r = 1;
-  const eye = [ply_pos[0] + r*Math.sin(gravity_dir*Math.PI/180),ply_pos[1] + -r*Math.cos(gravity_dir*Math.PI/180),ply_pos[2]];
-  const look = [Math.sin(look_angle) + ply_pos[0] + r*Math.sin(gravity_dir*Math.PI/180),ply_pos[1] + -r*Math.cos(gravity_dir*Math.PI/180),-Math.cos(look_angle)+ ply_pos[2]];
+  // const r = -1;
+  const eye = [ply_pos[0] - ply_height*Math.sin(gravity_dir*Math.PI/180),ply_pos[1] + ply_height*Math.cos(gravity_dir*Math.PI/180),ply_pos[2]];
+  const look = [Math.sin(look_angle) + ply_pos[0] - ply_height*Math.sin(gravity_dir*Math.PI/180),ply_pos[1] + ply_height*Math.cos(gravity_dir*Math.PI/180),-Math.cos(look_angle)+ ply_pos[2]];
   const up = [-Math.sin(gravity_dir*Math.PI/180),Math.cos(gravity_dir*Math.PI/180),0];
   mat4.lookAt(viewMatrix, eye, look, up);
 
@@ -228,15 +258,22 @@ function drawScene(gl, programInfo_v, programInfo_t, deltaTime) {
     obstacles[i].draw(gl, programInfo,projectionMatrix, viewMatrix, ply_pos);
   }
 
+  for(let i=0;i<doors.length;i++) {
+    doors[i].draw(gl, programInfo,projectionMatrix, viewMatrix, ply_pos);
+  }
+
   // Moving the player forward
   ply_pos[2] -= deltaTime*speed;
 }
 
 function tick_inputs() {
-  if (pressedKeys[37]) gravity_dir -= 5;
-  if (pressedKeys[39]) gravity_dir += 5;
+  if (pressedKeys[37]) gravity_dir = (gravity_dir - 5 + 360)%360 ;
+  if (pressedKeys[39]) gravity_dir = (gravity_dir + 5)%360;
   if (pressedKeys[38]) ply_pos[2] -= 0.25;
   if (pressedKeys[40]) ply_pos[2] += 0.25;
+  if (pressedKeys[32]) {
+    if(ply_height == -1) speed_v += jump_speed;
+  }
 }
 
 window.onkeyup = function(e) { pressedKeys[e.keyCode] = false; }
