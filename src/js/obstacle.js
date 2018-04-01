@@ -169,7 +169,7 @@ Obstacle.prototype.detect_collision = function(pos, rotation, speed) {
 		(front_face > pos && pos > back_face);
 
 	var comb = [];
-	var tolr = 40;
+	var tolr = 30;
 	for(let i=0;i<5;i++) {
 		comb.push([this.rotation+i*180-tolr,this.rotation+i*180+tolr]);
 		comb.push([this.rotation-i*180-tolr,this.rotation-i*180+tolr]);
@@ -184,17 +184,7 @@ Obstacle.prototype.detect_collision = function(pos, rotation, speed) {
 	return false;
 }
 
-function detect_rectangle_collision(a,b) {
-  var theta = -a.t;
-
-  px = Math.cos(theta) * (b[0]) - Math.sin(theta) * (b[1]);
-  py = Math.sin(theta) * (b[0]) + Math.cos(theta) * (b[1]);
-
-  return (Math.abs(a.x - px) < (a.l)/2.0) &&
-         (Math.abs(a.y - py)  < (a.b)/2.0) &&
-         (Math.abs(a.z - b[2]) < (a.h));
-}
-
 Obstacle.prototype.tick = function() {
 	this.rotation = (this.rotation + this.speed)%360;
+
 }

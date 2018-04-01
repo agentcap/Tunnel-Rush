@@ -24,6 +24,7 @@ var path_flag = 0;
 var obstacles = new Array();
 var doors = new Array();
 
+
 // Keys
 var key_left = false;
 var key_right = false;
@@ -57,7 +58,7 @@ function main() {
     'brick': loadTexture(gl, 'static/images/brick.png'),
     'white': loadTexture(gl, 'static/images/white.jpg'),
     'cube': loadTexture(gl, 'static/images/cubetexture.png'),
-    'fire': loadTexture(gl, 'static/images/fire.jpeg'),
+    'fire': loadTexture(gl, 'static/images/brick.png'),
   };
 
   // Initialize tunnel
@@ -66,7 +67,7 @@ function main() {
   size = 1;
   // obstacles.push( new Obstacle([0,0,0],
     // size,size,Math.floor(Math.random() * 360),1,'fire',gl));
-    // doors.push( new Door([0,0,0],0.4,1.5,30,0,'fire',gl));
+
 
   // Draw the scene repeatedly
   var then = 0;
@@ -92,9 +93,6 @@ function tick_elements(gl) {
 
   for(let i=0;i<obstacles.length;i++) {
     obstacles[i].tick();
-  }
-  for(let i=0;i<doors.length;i++) {
-    doors[i].tick();
   }
 }
 
@@ -124,7 +122,6 @@ function tick_player() {
       break;
     }
   }
-
   ply_height += speed_v;
   speed_v -= gravity;
 
@@ -132,6 +129,7 @@ function tick_player() {
     ply_height = -1;
     speed_v = 0;
   }
+
 }
 
 function remove_obstacles() {
@@ -171,17 +169,15 @@ function extend_tunnel(gl) {
         }
         else {
         obstacles.push( new Obstacle([lastCord[0] + tunnels[tunnels.length-2].shift,lastCord[1],lastCord[2] - len],
-            size/3,2*size,Math.floor(Math.random() * 360),0,'fire',gl));
-          
+            size/3,2*size,Math.floor(Math.random() * 360),2,'fire',gl));
         }
-
       }
     }
   }
 }
 
 function generate_tunnel(gl) {
-  LIMIT = 50;
+  LIMIT = 100;
   LENGTH = 1;
   SIZE = 2;
 
@@ -244,7 +240,7 @@ function drawScene(gl, programInfo_v, programInfo_t, deltaTime) {
                    zFar);
 
   // Calculating Look Vector
-  // const r = -1;
+  const r = 1;
   const eye = [ply_pos[0] - ply_height*Math.sin(gravity_dir*Math.PI/180),ply_pos[1] + ply_height*Math.cos(gravity_dir*Math.PI/180),ply_pos[2]];
   const look = [Math.sin(look_angle) + ply_pos[0] - ply_height*Math.sin(gravity_dir*Math.PI/180),ply_pos[1] + ply_height*Math.cos(gravity_dir*Math.PI/180),-Math.cos(look_angle)+ ply_pos[2]];
   const up = [-Math.sin(gravity_dir*Math.PI/180),Math.cos(gravity_dir*Math.PI/180),0];
@@ -261,6 +257,7 @@ function drawScene(gl, programInfo_v, programInfo_t, deltaTime) {
   for(let i=0;i<doors.length;i++) {
     doors[i].draw(gl, programInfo,projectionMatrix, viewMatrix, ply_pos);
   }
+
 
   // Moving the player forward
   ply_pos[2] -= deltaTime*speed;

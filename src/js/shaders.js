@@ -75,7 +75,7 @@ function textureShader(gl) {
       if(temp[2] > 100.0) temp[2] = 100.0;
       vec3 lightDir = (1.0-temp[2]/100.0)*normalize(lPosition - vFragPos);
       float diff = max(dot(vNormal, lightDir), 0.0);
-      vec3 diffuseLight = 2.0*lDiffuse * (diff * mDiffuse);
+      vec3 diffuseLight = lDiffuse * (diff * mDiffuse);
 
       // Specular Light
       vec3 viewDir = normalize(viewPos - vFragPos);
@@ -86,8 +86,8 @@ function textureShader(gl) {
       vec3 resultColor = ambientLight + diffuseLight + specularLight;
 
       vec4 texelColor = texture2D(uSampler, vTextureCoord);
-      // gl_FragColor = vec4(texelColor.rgb * resultColor, texelColor.a);
-      gl_FragColor = vec4(texelColor.rgb , texelColor.a);
+      gl_FragColor = vec4(texelColor.rgb * resultColor, texelColor.a);
+      // gl_FragColor = vec4(texelColor.rgb , texelColor.a);
     }
   `;
 

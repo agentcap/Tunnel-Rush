@@ -58,8 +58,6 @@ function Door(position, size, shift, rotation, speed, texture_type, gl) {
 		positions = positions.concat(cube);
 	}
 
-	console.log(positions);
-
 	indices = [];
 	cube_index = [
 	    0,  1,  2,      0,  2,  3,    // front
@@ -75,7 +73,6 @@ function Door(position, size, shift, rotation, speed, texture_type, gl) {
 			indices.push(24*i + cube_index[j]);
 		}
 	}
-	console.log(indices);
 
   	textureCoordinates = [
 	    // Front
@@ -112,7 +109,6 @@ function Door(position, size, shift, rotation, speed, texture_type, gl) {
 
   	textureCoordinates = textureCoordinates.concat(textureCoordinates);
   	textureCoordinates = textureCoordinates.concat(textureCoordinates);
-  	console.log(textureCoordinates);
 
 	vertexNormals = [
 	    // Front
